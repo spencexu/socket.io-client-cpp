@@ -1,4 +1,5 @@
-cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
+#cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.14)
 PROJECT(sioclient)
 
 option(BUILD_SHARED_LIBS "Build the shared library" OFF)
@@ -7,6 +8,28 @@ option(BUILD_UNIT_TESTS  "Builds unit tests target" OFF)
 set(MAJOR 1)
 set(MINOR 6)
 set(PATCH 0)
+
+if(NOT BORINGSSL_INCLUDE_PATH)
+	set(BORINGSSL_INCLUDE_PATH "" CACHE STRING "boringssl include path")
+endif()
+message("\n=========== sioclient Build Configuration ===========\n")
+message(STATUS "BUILD_SHARED_LIBS          : " ${BUILD_SHARED_LIBS})
+message(STATUS "BUILD_UNIT_TESTS           : " ${BUILD_UNIT_TESTS})
+message(STATUS "BORINGSSL_INCLUDE_PATH     : " ${BORINGSSL_INCLUDE_PATH})
+if (MSVC)
+	set(CMAKE_CXX_FLAGS_DEBUG "/Zi /Ob0 /Od /RTC1 /MTd")
+	set(CMAKE_CXX_FLAGS_RELEASE  "/O2 /Ob2 /DNDEBUG /MT")
+
+	message(STATUS "CMAKE_CXX_FLAGS_DEBUG : " ${CMAKE_CXX_FLAGS_DEBUG})
+	message(STATUS "CMAKE_CXX_FLAGS_RELEASE : " ${CMAKE_CXX_FLAGS_RELEASE})
+
+	add_compile_options(
+			/bigobj
+			$<$<CONFIG:>:/MT> #---------|
+			$<$<CONFIG:Debug>:/MTd> #---|-- Statically link the runtime libraries
+			$<$<CONFIG:Release>:/MT> #--|
+	)
+endif()
 
 if(NOT CMAKE_BUILD_TYPE )
 MESSAGE(STATUS "not define build type, set to release" )
@@ -54,15 +77,16 @@ set_target_properties(sioclient
 endif()
 list(APPEND TARGET_LIBRARIES sioclient)
 
-find_package(OpenSSL)
-if(OPENSSL_FOUND)
+#find_package(OpenSSL)
+#if(OPENSSL_FOUND)
 add_library(sioclient_tls ${ALL_SRC})
 target_include_directories(sioclient_tls PRIVATE
     ${CMAKE_CURRENT_LIST_DIR}/src 
     ${CMAKE_CURRENT_LIST_DIR}/lib/websocketpp 
     ${CMAKE_CURRENT_LIST_DIR}/lib/rapidjson/include
     ${CMAKE_CURRENT_LIST_DIR}/lib/asio/asio/include
-    ${OPENSSL_INCLUDE_DIR}
+#    ${OPENSSL_INCLUDE_DIR}
+    ${BORINGSSL_INCLUDE_PATH}
 )
 
 if (CMAKE_VERSION VERSION_GREATER "3.1")
@@ -72,7 +96,11 @@ target_link_libraries(sioclient_tls PRIVATE ${OPENSSL_LIBRARIES} )
 else()
 set_property(TARGET sioclient_tls APPEND_STRING PROPERTY COMPILE_FLAGS "-std=c++11")
 endif()
-target_compile_definitions(sioclient_tls PRIVATE -DSIO_TLS)
+#target_compile_definitions(sioclient_tls PRIVATE -DSIO_TLS)
+target_compile_definitions(sioclient_tls PRIVATE
+		SIO_TLS
+		$<$<PLATFORM_ID:Windows>:WIN32_LEAN_AND_MEAN>
+)
 if(BUILD_SHARED_LIBS)
 set_target_properties(sioclient_tls
 	PROPERTIES
@@ -82,7 +110,7 @@ set_target_properties(sioclient_tls
 endif()
 list(APPEND TARGET_LIBRARIES sioclient_tls)
 
-endif()
+#endif()
 
 include(GNUInstallDirs)
 
