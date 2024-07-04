@@ -29,6 +29,10 @@ if (MSVC)
 			$<$<CONFIG:Debug>:/MTd> #---|-- Statically link the runtime libraries
 			$<$<CONFIG:Release>:/MT> #--|
 	)
+else ()
+    add_definitions(
+        -std=c++14
+    )
 endif()
 
 if(NOT CMAKE_BUILD_TYPE )
@@ -52,8 +56,6 @@ add_definitions(
     # These will force WebsocketPP to compile with C++11
     -D_WEBSOCKETPP_CPP11_STL_
     -D_WEBSOCKETPP_CPP11_FUNCTIONAL_
-    # NOT windows
-    $<$<NOT:$<PLATFORM_ID:Windows>>:-std=c++14>
 )
 
 add_library(sioclient ${ALL_SRC})
