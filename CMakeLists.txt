@@ -16,6 +16,11 @@ message("\n=========== sioclient Build Configuration ===========\n")
 message(STATUS "BUILD_SHARED_LIBS          : " ${BUILD_SHARED_LIBS})
 message(STATUS "BUILD_UNIT_TESTS           : " ${BUILD_UNIT_TESTS})
 message(STATUS "BORINGSSL_INCLUDE_PATH     : " ${BORINGSSL_INCLUDE_PATH})
+
+
+add_compile_options(
+		$<$<CONFIG:Debug>:-D_GLIBCXX_DEBUG>
+)
 if (MSVC)
 	set(CMAKE_CXX_FLAGS_DEBUG "/Zi /Ob0 /Od /RTC1 /MTd")
 	set(CMAKE_CXX_FLAGS_RELEASE  "/O2 /Ob2 /DNDEBUG /MT")
@@ -30,9 +35,9 @@ if (MSVC)
 			$<$<CONFIG:Release>:/MT> #--|
 	)
 else ()
-    add_definitions(
-        -std=c++14
-    )
+	add_definitions(
+			-std=c++14
+	)
 endif()
 
 if(NOT CMAKE_BUILD_TYPE )
